@@ -6,6 +6,9 @@ TagManager:
   tags:
   - scenario
   - Ground
+  - Layer 1
+  - monster
+  - elevator
   layers:
   - Default
   - TransparentFX
