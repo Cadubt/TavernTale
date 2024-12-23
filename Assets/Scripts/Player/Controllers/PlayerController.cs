@@ -4,128 +4,226 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    #region  ## Variáveis ##
+
     public float speed = 1.0f;
+    public float originalSpeed = 1.0f;
     private Vector3 targetPosition;
-    private bool isMoving;
+    private bool isMoving = false;
+    public int health = 645;
+    public int mana = 550;
+    public HUDController hudController;
+    private float elevatedYPosition;
+    private RaycastHit hit;
+    Vector3 direction = Vector3.zero;
+    public float PlayerlevelHight = 0f;
+    public float LastestObjectYPosition = 0f;
+    private bool canMoveSideways = true;
+    public GameObject cubePrefab; // Prefab do cubos
+    private Vector3 lastMoveDirection = Vector3.forward; // Última direção de movimento
+
+    #endregion
 
     private void Start()
     {
+        originalSpeed = speed;
+        BoxCollider collider = GetComponent<BoxCollider>();
+        // collider.transform.rotation = Quaternion.identity;
         targetPosition = transform.position;
-        isMoving = false;
+        hudController = FindObjectOfType<HUDController>();
+        // Atualize a UI inicialmente com a saúde atual
+        hudController.UpdateHealth(health);
     }
 
     private void Update()
-    {
-        Vector3 direction = Vector3.zero;
+    {       
+
         if (isMoving)
             return;
 
-        // Detectar um clique do mouse
-        if (Input.GetMouseButtonDown(0))
+        Vector3 playerPosition = transform.position;
+        Vector3 lookDirection = transform.forward;
+        // Criar um raio da câmera até a posição do mouse
+        Ray ray = new Ray(playerPosition, lookDirection);
+        direction = Vector3.zero;
+
+        CheckIfOnGroundAndDescend();
+
+        #region Movimentação do jogador com as teclas W, A, S, D, Q, E, Z e C
+
+        if (!canMoveSideways)
         {
-            // Criar um raio da câmera até a posição do mouse
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            RaycastHit hit;
-
-            // Se o raio atingir o chão, definir a direção para o ponto onde o mouse clicou
-            if (Physics.Raycast(ray, out hit) && hit.collider.tag == "Ground")
-            {
-                Vector3 targetPosition = hit.point;
-                targetPosition.x = Mathf.RoundToInt(targetPosition.x);
-                // targetPosition.y = Mathf.RoundToInt(targetPosition.y);
-                targetPosition.z = Mathf.RoundToInt(targetPosition.z);
-
-                direction = targetPosition - transform.position;
-            }
+            return;
         }
-
-
-        MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
-        if (renderer != null)
-        {
-            Material material = renderer.material;
-            // Use o material aqui
-        }
-        else
-        {
-            Debug.LogError("No MeshRenderer attached to this game object.");
-        }
-
 
         if (Input.GetKey(KeyCode.W))
         {
-            direction += Vector3.forward;
+            speed = originalSpeed;
+            direction += this.IsCollided(direction + Vector3.forward) ? Vector3.forward : Vector3.zero;
+            lastMoveDirection = Vector3.forward;
         }
         if (Input.GetKey(KeyCode.S))
         {
-            direction += Vector3.back;
+            speed = originalSpeed;
+            direction += this.IsCollided(direction + Vector3.back) ? Vector3.back : Vector3.zero;
+            lastMoveDirection = Vector3.back;
         }
         if (Input.GetKey(KeyCode.A))
         {
-            direction += Vector3.left;
+            speed = originalSpeed;
+            direction += this.IsCollided(direction + Vector3.left) ? Vector3.left : Vector3.zero;
+            lastMoveDirection = Vector3.left;
         }
         if (Input.GetKey(KeyCode.D))
         {
-            direction += Vector3.right;
+            speed = originalSpeed;
+            direction += this.IsCollided(direction + Vector3.right) ? Vector3.right : Vector3.zero;
+            lastMoveDirection = Vector3.right;
         }
         if (Input.GetKey(KeyCode.Q))
         {
-            direction += Vector3.forward + Vector3.left;
+            direction += this.IsCollided(direction + Vector3.forward + Vector3.left) ? Vector3.forward + Vector3.left : Vector3.zero;
+            lastMoveDirection = Vector3.forward + Vector3.left;
+            speed = originalSpeed / 1.5f; // Reduz a velocidade pela metade
         }
         if (Input.GetKey(KeyCode.E))
         {
-            direction += Vector3.forward + Vector3.right;
+            direction += this.IsCollided(direction + Vector3.forward + Vector3.right) ? Vector3.forward + Vector3.right : Vector3.zero;
+            lastMoveDirection = Vector3.forward + Vector3.right;
+            speed = originalSpeed / 1.5f; // Reduz a velocidade pela metade
         }
         if (Input.GetKey(KeyCode.Z))
         {
-            direction += Vector3.back + Vector3.left;
+            direction += this.IsCollided(direction + Vector3.back + Vector3.left) ? Vector3.back + Vector3.left : Vector3.zero;
+            lastMoveDirection = Vector3.back + Vector3.left;
+            speed = originalSpeed / 1.5f; // Reduz a velocidade pela metade
         }
         if (Input.GetKey(KeyCode.C))
         {
-            direction += Vector3.back + Vector3.right;
+            direction += this.IsCollided(direction + Vector3.back + Vector3.right) ? Vector3.back + Vector3.right : Vector3.zero;
+            lastMoveDirection = Vector3.back + Vector3.right;
+            speed = originalSpeed / 1.5f; // Reduz a velocidade pela metade
         }
-        if (direction != Vector3.zero)
+
+        #endregion
+
+        // Detecta a tecla F pressionada para criar cubos
+        if (Input.GetKeyDown(KeyCode.F))
         {
-            // Lançar um raio na direção do movimento do jogador
-            Ray ray = new Ray(transform.position, direction);
-            RaycastHit hit;
-
-            // Imprimir uma mensagem no console quando o raio é desenhado
-            Debug.Log("Drawing ray from " + ray.origin + " in direction " + ray.direction);
-
-            // Desenhar o raio para fins de depuração
-            Debug.DrawLine(ray.origin, ray.origin + ray.direction * direction.magnitude, Color.red, 2f);
-
-            // Se o raio atingir algo com a tag "scenario" dentro da distância do passo do jogador, não mover o jogador
-            if (Physics.Raycast(ray, out hit, direction.magnitude) && hit.collider.tag == "scenario")
-            {
-                float objectHeight = hit.collider.bounds.size.y;
-
-                // Calcular a posição Y do topo do objeto
-                float topYPosition = hit.collider.bounds.center.y + objectHeight / 2;
-
-                // Imprimir a altura do objeto e a posição Y do topo do objeto
-                Debug.Log("Object height: " + objectHeight);
-
-                return;
-            }
-
-            targetPosition += direction;
-            StartCoroutine(MovePlayer(targetPosition));
+            CreateMagicCubes();
         }
-
-
     }
 
-    IEnumerator MovePlayer(Vector3 target)
+    private bool IsCollided(Vector3 direction)
+    {
+        Ray ray = new Ray(transform.position, direction);
+        bool isHit = Physics.Raycast(ray, out RaycastHit hit, 1f);
+        Debug.DrawLine(ray.origin, ray.origin + direction * 1f, isHit ? Color.red : Color.green);
+
+        if (isHit && hit.collider.tag != "enviroment")
+        {
+            Debug.Log("COLIDI COM O OBJETO: " + hit.collider.tag);
+            if (hit.collider.tag == "elevator")
+            {
+                LastestObjectYPosition = hit.collider.transform.position.y;
+                PlayerlevelHight = LastestObjectYPosition + 1f;
+                targetPosition = new Vector3(targetPosition.x, PlayerlevelHight, targetPosition.z) + direction;
+                Debug.Log(PlayerlevelHight);
+                StartCoroutine(Move(targetPosition));
+            }
+        }
+        else
+        {
+            targetPosition += direction;
+            StartCoroutine(Move(targetPosition));
+        }
+        return isHit;
+    }
+
+    IEnumerator Move(Vector3 target)
     {
         isMoving = true;
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
         while ((target - transform.position).sqrMagnitude > Mathf.Epsilon)
         {
+            // Flip the sprite based on the direction of movement
+            if (target.x > transform.position.x)
+            {
+                // Moving right
+                spriteRenderer.flipX = false;
+            }
+            else if (target.x < transform.position.x)
+            {
+                // Moving left
+                spriteRenderer.flipX = true;
+            }
             transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
             yield return null;
         }
-        transform.position = target;
         isMoving = false;
+    }
+
+    public void TakeDamage(int damage)
+    {
+        health -= damage;
+        // Garante que a vida não fique negativa
+        health = Mathf.Max(health, 0);
+        // Atualiza a UI com a nova vida
+        hudController.UpdateHealth(health);
+    }
+
+    /**
+     * Verifica se o personagem esta em cima de um objeto e desce 0.5f no eixo Y
+     */
+    private void CheckIfOnGroundAndDescend()
+    {
+        Ray ray = new Ray(transform.position, Vector3.down);
+        bool isGroundHit = Physics.Raycast(ray, out RaycastHit hit, 1f);
+        Debug.DrawLine(ray.origin, ray.origin + Vector3.down * 1f, isGroundHit ? Color.red : Color.green);
+        // Debug.Log("IS GROUND HIT: " + hit.collider.tag);
+
+        if (hit.collider == null)
+        {
+            Debug.Log("NÃO ESTOU EM CIMA DE NADA");
+            StartCoroutine(WaitAndMoveDown());
+        }
+        // else
+        // {
+        //     Debug.Log("ESTOU EM CIMA DO : " + hit.collider.tag);
+        // }
+    }
+
+    private IEnumerator WaitAndMoveDown()
+    {
+        // Desativa a movimentação lateral
+        canMoveSideways = false;
+
+        // Aguarda 1 segundo
+        yield return new WaitForSeconds(0.0001f);
+
+        // Move o jogador para baixo
+        targetPosition = new Vector3(targetPosition.x, PlayerlevelHight - 1f, targetPosition.z);
+        StartCoroutine(Move(targetPosition));
+
+        // Reativa a movimentação lateral
+        canMoveSideways = true;
+    }
+
+    private void CreateMagicCubes()
+    {
+        Vector3 startPosition = transform.position + lastMoveDirection;
+        for (int i = 0; i < 5; i++)
+        {
+            Debug.Log("CRIANDO CUBO");
+            Vector3 cubePosition = startPosition + lastMoveDirection * i;
+            GameObject cube = Instantiate(cubePrefab, cubePosition, Quaternion.identity);
+            StartCoroutine(DestroyCubeAfterTime(cube, 1));
+        }
+    }
+
+    private IEnumerator DestroyCubeAfterTime(GameObject cube, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        Destroy(cube);
     }
 }

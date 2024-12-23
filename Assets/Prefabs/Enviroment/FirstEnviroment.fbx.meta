@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: e17cf3c065e37fe4da08bf80e10c79cd
+guid: 6f6a23a89c827d44e8ddeb99ca67e017
 ModelImporter:
   serializedVersion: 21300
   internalIDToNameTable: []
@@ -7,18 +7,13 @@ ModelImporter:
   - first:
       type: UnityEngine:Texture2D
       assembly: UnityEngine.CoreModule
-      name: PocGround
-    second: {fileID: 2800000, guid: 66f4b4f3e704c404cb06156d129bfb3a, type: 3}
-  - first:
-      type: UnityEngine:Texture2D
-      assembly: UnityEngine.CoreModule
       name: StoneWalls
-    second: {fileID: 2800000, guid: 99e0e821ebd67014eb36913523f4d3bf, type: 3}
+    second: {fileID: 2800000, guid: d52db4c7e4193de4d83c475ba7dd1499, type: 3}
   - first:
       type: UnityEngine:Texture2D
       assembly: UnityEngine.CoreModule
       name: Tiles
-    second: {fileID: 2800000, guid: ba9df34c1cdf5bf4c92ab36503ab8dda, type: 3}
+    second: {fileID: 2800000, guid: 7e49fe77f76ec5341a239bd00bdc2e1c, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0
