@@ -13,31 +13,31 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Ground
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Elevator
+  - 10_Floor
+  - 9_Floor
+  - 8_Floor
+  - 7_Floor
+  - 6_Floor
+  - 5_Floor
+  - 4_Floor
+  - 3_Floor
+  - 2_Floor
+  - 1_Floor
+  - 0_Floor
+  - -1_Floor
+  - -2_Floor
+  - -3_Floor
+  - -4_Floor
+  - -5_Floor
+  - -6_Floor
+  - -7_Floor
+  - -8_Floor
+  - -9_Floor
+  - -10_Floor
   - 
   - 
   - 

@@ -6,8 +6,8 @@ public class PlayerController : MonoBehaviour
 {
     #region  ## Variáveis ##
 
-    public float speed = 1.0f;
-    public float originalSpeed = 1.0f;
+    public float speed = 4.0f;
+    public float originalSpeed = 4.0f;
     private Vector3 targetPosition;
     private bool isMoving = false;
     public int health = 645;
@@ -16,38 +16,55 @@ public class PlayerController : MonoBehaviour
     private float elevatedYPosition;
     private RaycastHit hit;
     Vector3 direction = Vector3.zero;
-    public float PlayerlevelHight = 0f;
-    public float LastestObjectYPosition = 0f;
+    public float PlayerlevelHight = 0.888881f;
+    public float LastestObjectYPosition = 0.55f;
     private bool canMoveSideways = true;
     public GameObject cubePrefab; // Prefab do cubos
     private Vector3 lastMoveDirection = Vector3.forward; // Última direção de movimento
+    private Animator animator;
+    private bool isFalling = false;
+    public LayerMask groundLayer;
+    public LayerMask elevatorLayer;
+    [SerializeField] private LayerMask supportLayerMask; // ground + elevator
 
     #endregion
 
+
+    /// <summary>
+    /// Método chamado automaticamente pelo Unity ao iniciar a cena ou ativar o GameObject.
+    /// Inicializa componentes essenciais como o Animator, configura a posição inicial do alvo,
+    /// armazena a velocidade original do personagem e atualiza a HUD com a saúde atual.
+    /// </summary>
     private void Start()
     {
-        originalSpeed = speed;
-        BoxCollider collider = GetComponent<BoxCollider>();
-        // collider.transform.rotation = Quaternion.identity;
-        targetPosition = transform.position;
-        hudController = FindObjectOfType<HUDController>();
-        // Atualize a UI inicialmente com a saúde atual
-        hudController.UpdateHealth(health);
+        animator = GetComponent<Animator>(); // Obtém o componente Animator do GameObject
+        originalSpeed = speed; // Armazena o valor original da velocidade
+        BoxCollider collider = GetComponent<BoxCollider>(); // Obtém o componente BoxCollider (linha comentada abaixo não altera rotação)
+        targetPosition = transform.position; // Define a posição alvo inicial como a posição atual
+        hudController = FindObjectOfType<HUDController>(); // Busca o objeto do tipo HUDController na cena
+        hudController.UpdateHealth(health); // Atualiza a HUD com a saúde atual do personagem
     }
 
     private void Update()
-    {       
+    {
 
         if (isMoving)
+        {
+            animator.SetBool("isWalking", true);
             return;
+        }
+
+        if (!isMoving)
+        {
+            animator.SetBool("isWalking", false);
+            CheckFloor();
+        }
 
         Vector3 playerPosition = transform.position;
         Vector3 lookDirection = transform.forward;
         // Criar um raio da câmera até a posição do mouse
         Ray ray = new Ray(playerPosition, lookDirection);
         direction = Vector3.zero;
-
-        CheckIfOnGroundAndDescend();
 
         #region Movimentação do jogador com as teclas W, A, S, D, Q, E, Z e C
 
@@ -123,12 +140,16 @@ public class PlayerController : MonoBehaviour
         if (isHit && hit.collider.tag != "enviroment")
         {
             Debug.Log("COLIDI COM O OBJETO: " + hit.collider.tag);
-            if (hit.collider.tag == "elevator")
+            if (hit.collider.CompareTag("elevator"))
             {
-                LastestObjectYPosition = hit.collider.transform.position.y;
-                PlayerlevelHight = LastestObjectYPosition + 1f;
-                targetPosition = new Vector3(targetPosition.x, PlayerlevelHight, targetPosition.z) + direction;
-                Debug.Log(PlayerlevelHight);
+
+                float currentY = transform.position.y + 1f;
+                // Debug.Log("Y =" + currentY);
+
+
+                // Define a nova posição-alvo mantendo o movimento horizontal e alterando só o Y
+                targetPosition = new Vector3(targetPosition.x, currentY, targetPosition.z) + direction;
+
                 StartCoroutine(Move(targetPosition));
             }
         }
@@ -140,79 +161,88 @@ public class PlayerController : MonoBehaviour
         return isHit;
     }
 
-    IEnumerator Move(Vector3 target)
+    IEnumerator Move(Vector3 target, System.Action onComplete = null)
     {
+        Debug.Log(transform.position.y);
         isMoving = true;
         SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+
         while ((target - transform.position).sqrMagnitude > Mathf.Epsilon)
         {
-            // Flip the sprite based on the direction of movement
             if (target.x > transform.position.x)
             {
-                // Moving right
-                spriteRenderer.flipX = false;
+                spriteRenderer.flipX = true;
             }
             else if (target.x < transform.position.x)
             {
-                // Moving left
-                spriteRenderer.flipX = true;
+                spriteRenderer.flipX = false;
             }
+
             transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
             yield return null;
         }
+
+        transform.position = target;
         isMoving = false;
+
+
+        // onComplete?.Invoke(); // Chama o callback se existir
     }
 
-    public void TakeDamage(int damage)
-    {
-        health -= damage;
-        // Garante que a vida não fique negativa
-        health = Mathf.Max(health, 0);
-        // Atualiza a UI com a nova vida
-        hudController.UpdateHealth(health);
-    }
 
-    /**
-     * Verifica se o personagem esta em cima de um objeto e desce 0.5f no eixo Y
-     */
-    private void CheckIfOnGroundAndDescend()
+    /// <summary>
+    /// Verifica se o personagem esta em cima de um objeto se sim avisa, se não cai
+    /// </summary>
+    private void CheckFloor()
     {
+        if (isMoving || isFalling) return;
+
+
         Ray ray = new Ray(transform.position, Vector3.down);
-        bool isGroundHit = Physics.Raycast(ray, out RaycastHit hit, 1f);
-        Debug.DrawLine(ray.origin, ray.origin + Vector3.down * 1f, isGroundHit ? Color.red : Color.green);
-        // Debug.Log("IS GROUND HIT: " + hit.collider.tag);
+        bool isGroundHit = Physics.Raycast(ray, out RaycastHit hit, 1f, groundLayer | elevatorLayer);
 
-        if (hit.collider == null)
+        Debug.DrawLine(ray.origin, ray.origin + Vector3.down * 1f, Color.red);
+
+        if (!isGroundHit)
         {
-            Debug.Log("NÃO ESTOU EM CIMA DE NADA");
-            StartCoroutine(WaitAndMoveDown());
+            Debug.Log("SEM CHAAAAAAAAo");
+            StartCoroutine(MoveDown());
         }
-        // else
-        // {
-        //     Debug.Log("ESTOU EM CIMA DO : " + hit.collider.tag);
-        // }
     }
 
-    private IEnumerator WaitAndMoveDown()
+    private IEnumerator MoveDown()
     {
-        // Desativa a movimentação lateral
+        if (isFalling) yield break;
+
+        isFalling = true;
         canMoveSideways = false;
 
-        // Aguarda 1 segundo
-        yield return new WaitForSeconds(0.0001f);
+        float currentY = transform.position.y;
+        Ray ray = new Ray(transform.position + Vector3.up * 1f, Vector3.down);
+        bool isGroundHit = Physics.Raycast(ray, out RaycastHit hit, 1f, groundLayer | elevatorLayer);
 
-        // Move o jogador para baixo
-        targetPosition = new Vector3(targetPosition.x, PlayerlevelHight - 1f, targetPosition.z);
-        StartCoroutine(Move(targetPosition));
+        Debug.DrawRay(ray.origin, ray.direction * 1f, isGroundHit ? Color.green : Color.red);
 
-        // Reativa a movimentação lateral
+        if (isGroundHit)
+        {
+            Debug.Log("TOQUEI NO CHÃO: " + LayerMask.LayerToName(hit.collider.gameObject.layer));
+        }
+        currentY -= 1f;
+
+
+        targetPosition = new Vector3(targetPosition.x, currentY, targetPosition.z);
+        yield return StartCoroutine(Move(targetPosition));
+
         canMoveSideways = true;
+        isFalling = false;
     }
+
+
 
     private void CreateMagicCubes()
     {
         Vector3 startPosition = transform.position + lastMoveDirection;
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 9; i++)
         {
             Debug.Log("CRIANDO CUBO");
             Vector3 cubePosition = startPosition + lastMoveDirection * i;
@@ -225,5 +255,15 @@ public class PlayerController : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         Destroy(cube);
+    }
+
+
+    public void TakeDamage(int damage)
+    {
+        health -= damage;
+        // Garante que a vida não fique negativa
+        health = Mathf.Max(health, 0);
+        // Atualiza a UI com a nova vida
+        hudController.UpdateHealth(health);
     }
 }
