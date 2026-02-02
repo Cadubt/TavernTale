@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<< HEAD
 guid: ac553280140ef8e4180f76c91c90bc00
+=======
+guid: ff2526e05196f2d41b11cda29c93f319
+>>>>>>> origin/feat/playerWalk
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}

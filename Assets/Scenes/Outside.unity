@@ -18643,6 +18643,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2166c4f05ed703488c7bc950b42b9f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+<<<<<<< HEAD
   speed: 3
   originalSpeed: 3
   health: 645
@@ -18651,6 +18652,11 @@ MonoBehaviour:
   PlayerlevelHight: 0
   LastestObjectYPosition: 0.55
   cubePrefab: {fileID: 0}
+=======
+  playerStats: {fileID: 0}
+  movementController: {fileID: 0}
+  magicController: {fileID: 0}
+>>>>>>> origin/feat/playerWalk
 --- !u!1 &1745913054 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5963772091205938584, guid: 8e1feacbb31cbc4448309abef2efd062, type: 3}
@@ -19763,6 +19769,7 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1078624196881967536, guid: c36026505eee52f4cbde35bdb5de55a1, type: 3}
+<<<<<<< HEAD
       propertyPath: m_Size.x
       value: 0.675
       objectReference: {fileID: 0}
@@ -19774,6 +19781,11 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 21300000, guid: d632fe0da515e0c449a9ac0ee33e33ef, type: 3}
+=======
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -126904989, guid: b8350e30c768bc147abba9db589c599f, type: 3}
+>>>>>>> origin/feat/playerWalk
     - target: {fileID: 1078624196881967550, guid: c36026505eee52f4cbde35bdb5de55a1, type: 3}
       propertyPath: cubePrefab
       value: 

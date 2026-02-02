@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<< HEAD
 guid: 89cbf6e2f295d0d40846dffbb6a24da5
+=======
+guid: d58abe9c1ecfe1a43b93a49976fcafb7
+>>>>>>> origin/feat/playerWalk
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -33,7 +37,11 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
+<<<<<<< HEAD
     filterMode: 0
+=======
+    filterMode: 1
+>>>>>>> origin/feat/playerWalk
     aniso: 1
     mipBias: 0
     wrapU: 0
@@ -70,7 +78,11 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
+<<<<<<< HEAD
     textureCompression: 0
+=======
+    textureCompression: 1
+>>>>>>> origin/feat/playerWalk
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
