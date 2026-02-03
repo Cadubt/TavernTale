@@ -1,250 +1,248 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    #region  ## Variáveis ##
-
+    [Header("Movimento")]
     public float speed = 4.0f;
-    public float originalSpeed = 4.0f;
+    public float diagonalSpeedMultiplier = 0.75f;
+    private float currentSpeed;
+    
     private Vector3 targetPosition;
     private bool isMoving = false;
-    public int health = 645;
-    public int mana = 550;
-    public HUDController hudController;
-    private float elevatedYPosition;
-    private RaycastHit hit;
-    Vector3 direction = Vector3.zero;
+    private bool isFalling = false;
+    private bool canMove = true;
+    private Vector3 lastMoveDirection = Vector3.forward;
+    
+    [Header("Altura")]
     public float PlayerlevelHight = 0.888881f;
     public float LastestObjectYPosition = 0.55f;
-    private bool canMoveSideways = true;
-    public GameObject cubePrefab; // Prefab do cubos
-    private Vector3 lastMoveDirection = Vector3.forward; // Última direção de movimento
-    private Animator animator;
-    private bool isFalling = false;
     public LayerMask groundLayer;
     public LayerMask elevatorLayer;
-    [SerializeField] private LayerMask supportLayerMask; // ground + elevator
+    
+    [Header("Stats")]
+    public int health = 645;
+    public int mana = 550;
+    
+    [Header("Habilidades")]
+    public GameObject cubePrefab;
+    
+    private Animator animator;
+    private SpriteRenderer spriteRenderer;
+    
+    private Vector3 pendingDirection = Vector3.zero;
+    private bool hasBufferedInput = false;
 
-    #endregion
-
-
-    /// <summary>
-    /// Método chamado automaticamente pelo Unity ao iniciar a cena ou ativar o GameObject.
-    /// Inicializa componentes essenciais como o Animator, configura a posição inicial do alvo,
-    /// armazena a velocidade original do personagem e atualiza a HUD com a saúde atual.
-    /// </summary>
     private void Start()
     {
-        animator = GetComponent<Animator>(); // Obtém o componente Animator do GameObject
-        originalSpeed = speed; // Armazena o valor original da velocidade
-        BoxCollider collider = GetComponent<BoxCollider>(); // Obtém o componente BoxCollider (linha comentada abaixo não altera rotação)
-        targetPosition = transform.position; // Define a posição alvo inicial como a posição atual
-        hudController = FindObjectOfType<HUDController>(); // Busca o objeto do tipo HUDController na cena
-        hudController.UpdateHealth(health); // Atualiza a HUD com a saúde atual do personagem
+        animator = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        
+        currentSpeed = speed;
+        targetPosition = transform.position;
     }
 
     private void Update()
     {
+        if (animator != null)
+        {
+            animator.SetBool("isWalking", isMoving);
+        }
 
         if (isMoving)
         {
-            animator.SetBool("isWalking", true);
+            ProcessInputBuffer();
             return;
         }
 
-        if (!isMoving)
-        {
-            animator.SetBool("isWalking", false);
-            CheckFloor();
-        }
+        CheckFloor();
 
-        Vector3 playerPosition = transform.position;
-        Vector3 lookDirection = transform.forward;
-        // Criar um raio da câmera até a posição do mouse
-        Ray ray = new Ray(playerPosition, lookDirection);
-        direction = Vector3.zero;
-
-        #region Movimentação do jogador com as teclas W, A, S, D, Q, E, Z e C
-
-        if (!canMoveSideways)
+        if (!canMove)
         {
             return;
         }
 
-        if (Input.GetKey(KeyCode.W))
+        Vector3 inputDirection = GetInputDirection();
+
+        if (inputDirection != Vector3.zero)
         {
-            speed = originalSpeed;
-            direction += this.IsCollided(direction + Vector3.forward) ? Vector3.forward : Vector3.zero;
-            lastMoveDirection = Vector3.forward;
-        }
-        if (Input.GetKey(KeyCode.S))
-        {
-            speed = originalSpeed;
-            direction += this.IsCollided(direction + Vector3.back) ? Vector3.back : Vector3.zero;
-            lastMoveDirection = Vector3.back;
-        }
-        if (Input.GetKey(KeyCode.A))
-        {
-            speed = originalSpeed;
-            direction += this.IsCollided(direction + Vector3.left) ? Vector3.left : Vector3.zero;
-            lastMoveDirection = Vector3.left;
-        }
-        if (Input.GetKey(KeyCode.D))
-        {
-            speed = originalSpeed;
-            direction += this.IsCollided(direction + Vector3.right) ? Vector3.right : Vector3.zero;
-            lastMoveDirection = Vector3.right;
-        }
-        if (Input.GetKey(KeyCode.Q))
-        {
-            direction += this.IsCollided(direction + Vector3.forward + Vector3.left) ? Vector3.forward + Vector3.left : Vector3.zero;
-            lastMoveDirection = Vector3.forward + Vector3.left;
-            speed = originalSpeed / 1.5f; // Reduz a velocidade pela metade
-        }
-        if (Input.GetKey(KeyCode.E))
-        {
-            direction += this.IsCollided(direction + Vector3.forward + Vector3.right) ? Vector3.forward + Vector3.right : Vector3.zero;
-            lastMoveDirection = Vector3.forward + Vector3.right;
-            speed = originalSpeed / 1.5f; // Reduz a velocidade pela metade
-        }
-        if (Input.GetKey(KeyCode.Z))
-        {
-            direction += this.IsCollided(direction + Vector3.back + Vector3.left) ? Vector3.back + Vector3.left : Vector3.zero;
-            lastMoveDirection = Vector3.back + Vector3.left;
-            speed = originalSpeed / 1.5f; // Reduz a velocidade pela metade
-        }
-        if (Input.GetKey(KeyCode.C))
-        {
-            direction += this.IsCollided(direction + Vector3.back + Vector3.right) ? Vector3.back + Vector3.right : Vector3.zero;
-            lastMoveDirection = Vector3.back + Vector3.right;
-            speed = originalSpeed / 1.5f; // Reduz a velocidade pela metade
+            TryMove(inputDirection);
         }
 
-        #endregion
-
-        // Detecta a tecla F pressionada para criar cubos
         if (Input.GetKeyDown(KeyCode.F))
         {
             CreateMagicCubes();
         }
     }
 
-    private bool IsCollided(Vector3 direction)
+    private Vector3 GetInputDirection()
     {
-        Ray ray = new Ray(transform.position, direction);
-        bool isHit = Physics.Raycast(ray, out RaycastHit hit, 1f);
-        Debug.DrawLine(ray.origin, ray.origin + direction * 1f, isHit ? Color.red : Color.green);
+        Vector3 direction = Vector3.zero;
+        bool isDiagonal = false;
 
-        if (isHit && hit.collider.tag != "enviroment")
+        // Verifica teclas diagonais primeiro (prioridade)
+        if (Input.GetKey(KeyCode.Q))
         {
-            Debug.Log("COLIDI COM O OBJETO: " + hit.collider.tag);
-            if (hit.collider.CompareTag("elevator"))
-            {
-
-                float currentY = transform.position.y + 1f;
-                // Debug.Log("Y =" + currentY);
-
-
-                // Define a nova posição-alvo mantendo o movimento horizontal e alterando só o Y
-                targetPosition = new Vector3(targetPosition.x, currentY, targetPosition.z) + direction;
-
-                StartCoroutine(Move(targetPosition));
-            }
+            direction = Vector3.forward + Vector3.left;
+            isDiagonal = true;
+        }
+        else if (Input.GetKey(KeyCode.E))
+        {
+            direction = Vector3.forward + Vector3.right;
+            isDiagonal = true;
+        }
+        else if (Input.GetKey(KeyCode.Z))
+        {
+            direction = Vector3.back + Vector3.left;
+            isDiagonal = true;
+        }
+        else if (Input.GetKey(KeyCode.C))
+        {
+            direction = Vector3.back + Vector3.right;
+            isDiagonal = true;
         }
         else
         {
-            targetPosition += direction;
-            StartCoroutine(Move(targetPosition));
+            // Movimentação cardinal - prioriza a última tecla válida
+            bool up = Input.GetKey(KeyCode.W);
+            bool down = Input.GetKey(KeyCode.S);
+            bool left = Input.GetKey(KeyCode.A);
+            bool right = Input.GetKey(KeyCode.D);
+
+            // Se teclas opostas são pressionadas, cancela o movimento naquele eixo
+            if (up && down) { up = false; down = false; }
+            if (left && right) { left = false; right = false; }
+
+            if (up) direction += Vector3.forward;
+            else if (down) direction += Vector3.back;
+            
+            if (left) direction += Vector3.left;
+            else if (right) direction += Vector3.right;
+
+            isDiagonal = direction.sqrMagnitude > 1.1f;
         }
-        return isHit;
+
+        if (direction != Vector3.zero)
+        {
+            // Arredonda primeiro para garantir valores inteiros
+            direction.x = Mathf.Round(direction.x);
+            direction.z = Mathf.Round(direction.z);
+            
+            // Limita para apenas 1 unidade por eixo
+            direction.x = Mathf.Clamp(direction.x, -1f, 1f);
+            direction.z = Mathf.Clamp(direction.z, -1f, 1f);
+            
+            currentSpeed = isDiagonal ? speed * diagonalSpeedMultiplier : speed;
+        }
+
+        return direction;
     }
 
-    IEnumerator Move(Vector3 target, System.Action onComplete = null)
+    private void ProcessInputBuffer()
     {
-        Debug.Log(transform.position.y);
+        // Não processa buffer durante movimento para evitar double move
+        // O buffer só será usado ao final da corrotina Move()
+    }
+
+    private void TryMove(Vector3 direction)
+    {
+        if (isMoving) return;
+
+        lastMoveDirection = direction;
+        
+        Ray ray = new Ray(transform.position, direction);
+        bool hasHit = Physics.Raycast(ray, out RaycastHit hit, 1f);
+        
+        Debug.DrawLine(ray.origin, ray.origin + direction * 1f, hasHit ? Color.red : Color.green, 0.5f);
+
+        if (hasHit)
+        {
+            if (hit.collider.CompareTag("elevator"))
+            {
+                float newY = transform.position.y + 1f;
+                targetPosition = new Vector3(transform.position.x, newY, transform.position.z) + direction;
+                StartCoroutine(Move(targetPosition));
+                return;
+            }
+            
+            if (hit.collider.CompareTag("scenario") || hit.collider.CompareTag("monster"))
+            {
+                return;
+            }
+        }
+
+        targetPosition = transform.position + direction;
+        StartCoroutine(Move(targetPosition));
+    }
+
+    private IEnumerator Move(Vector3 target)
+    {
         isMoving = true;
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
 
         while ((target - transform.position).sqrMagnitude > Mathf.Epsilon)
         {
-            if (target.x > transform.position.x)
+            if (spriteRenderer != null)
             {
-                spriteRenderer.flipX = true;
-            }
-            else if (target.x < transform.position.x)
-            {
-                spriteRenderer.flipX = false;
+                if (target.x > transform.position.x)
+                {
+                    spriteRenderer.flipX = true;
+                }
+                else if (target.x < transform.position.x)
+                {
+                    spriteRenderer.flipX = false;
+                }
             }
 
-            transform.position = Vector3.MoveTowards(transform.position, target, speed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, target, currentSpeed * Time.deltaTime);
             yield return null;
         }
 
         transform.position = target;
         isMoving = false;
 
-
-        // onComplete?.Invoke(); // Chama o callback se existir
+        if (hasBufferedInput)
+        {
+            hasBufferedInput = false;
+            TryMove(pendingDirection);
+            pendingDirection = Vector3.zero;
+        }
     }
 
-
-    /// <summary>
-    /// Verifica se o personagem esta em cima de um objeto se sim avisa, se não cai
-    /// </summary>
     private void CheckFloor()
     {
         if (isMoving || isFalling) return;
 
-
         Ray ray = new Ray(transform.position, Vector3.down);
         bool isGroundHit = Physics.Raycast(ray, out RaycastHit hit, 1f, groundLayer | elevatorLayer);
 
-        Debug.DrawLine(ray.origin, ray.origin + Vector3.down * 1f, Color.red);
-
         if (!isGroundHit)
         {
-            Debug.Log("SEM CHAAAAAAAAo");
-            StartCoroutine(MoveDown());
+            StartCoroutine(Fall());
         }
     }
 
-    private IEnumerator MoveDown()
+    private IEnumerator Fall()
     {
         if (isFalling) yield break;
 
         isFalling = true;
-        canMoveSideways = false;
+        canMove = false;
 
-        float currentY = transform.position.y;
-        Ray ray = new Ray(transform.position + Vector3.up * 1f, Vector3.down);
-        bool isGroundHit = Physics.Raycast(ray, out RaycastHit hit, 1f, groundLayer | elevatorLayer);
-
-        Debug.DrawRay(ray.origin, ray.direction * 1f, isGroundHit ? Color.green : Color.red);
-
-        if (isGroundHit)
-        {
-            Debug.Log("TOQUEI NO CHÃO: " + LayerMask.LayerToName(hit.collider.gameObject.layer));
-        }
-        currentY -= 1f;
-
-
-        targetPosition = new Vector3(targetPosition.x, currentY, targetPosition.z);
+        float newY = transform.position.y - 1f;
+        targetPosition = new Vector3(transform.position.x, newY, transform.position.z);
+        
         yield return StartCoroutine(Move(targetPosition));
 
-        canMoveSideways = true;
+        canMove = true;
         isFalling = false;
     }
-
-
 
     private void CreateMagicCubes()
     {
         Vector3 startPosition = transform.position + lastMoveDirection;
         for (int i = 0; i < 9; i++)
         {
-            Debug.Log("CRIANDO CUBO");
             Vector3 cubePosition = startPosition + lastMoveDirection * i;
             GameObject cube = Instantiate(cubePrefab, cubePosition, Quaternion.identity);
             StartCoroutine(DestroyCubeAfterTime(cube, 1));
@@ -257,13 +255,19 @@ public class PlayerController : MonoBehaviour
         Destroy(cube);
     }
 
-
     public void TakeDamage(int damage)
     {
         health -= damage;
-        // Garante que a vida não fique negativa
-        health = Mathf.Max(health, 0);
-        // Atualiza a UI com a nova vida
-        hudController.UpdateHealth(health);
+        if (health < 0) health = 0;
+    }
+
+    public Vector3 GetLastMoveDirection()
+    {
+        return lastMoveDirection;
+    }
+
+    public bool IsMoving()
+    {
+        return isMoving;
     }
 }
