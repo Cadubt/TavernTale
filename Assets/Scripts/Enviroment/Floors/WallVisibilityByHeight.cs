@@ -2,21 +2,31 @@ using UnityEngine;
 
 public class WallVisibilityByHeight : MonoBehaviour
 {
-    [Tooltip("Referência ao Transform do jogador")]
+    [Tooltip("Referência ao Transform do jogador (deixe vazio para buscar automaticamente)")]
     public Transform player;
 
     [Tooltip("Altura em Y a partir da qual esta parede será visível")]
-    public float minYToShow = 2.88f;
+    private float minYToShow = 7.71f;
 
     private bool isVisible = true;
     private Renderer[] renderers;
 
     void Start()
     {
+        // Busca automaticamente o player se não foi atribuído
         if (player == null)
         {
-            Debug.LogWarning("Player não atribuído ao WallVisibilityByHeight.");
-            return;
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                player = playerObj.transform;
+                Debug.Log($"WallVisibilityByHeight: Player encontrado automaticamente em '{playerObj.name}'");
+            }
+            else
+            {
+                Debug.LogWarning("WallVisibilityByHeight: Player não encontrado. Certifique-se que o GameObject do player tem a tag 'Player'.");
+                return;
+            }
         }
 
         // Pega todos os renderers deste objeto e filhos

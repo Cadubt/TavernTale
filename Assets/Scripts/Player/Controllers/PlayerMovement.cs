@@ -9,7 +9,7 @@ namespace Player.Controllers
     public class PlayerMovement : MonoBehaviour
     {
         [Header("Configurações de Movimento")]
-        public float speed = 4.0f;
+        public float speed = 5.0f;
         public float diagonalSpeedMultiplier = 0.75f;
         
         [Header("Detecção de Terreno")]

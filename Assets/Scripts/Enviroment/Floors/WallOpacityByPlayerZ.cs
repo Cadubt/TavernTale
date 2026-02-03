@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class WallOpacityByPlayerZ : MonoBehaviour
 {
-    [Tooltip("Referência ao Transform do jogador")]
+    [Tooltip("Referência ao Transform do jogador (deixe vazio para buscar automaticamente)")]
     public Transform player;
 
     [Tooltip("Distância extra no eixo Z antes de aplicar transparência")]
@@ -24,11 +24,21 @@ public class WallOpacityByPlayerZ : MonoBehaviour
 
     void Start()
     {
+        // Busca automaticamente o player se não foi atribuído
         if (player == null)
         {
-            Debug.LogWarning("Player não atribuído ao WallOpacityByPlayerZ.");
-            enabled = false;
-            return;
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                player = playerObj.transform;
+                Debug.Log($"WallOpacityByPlayerZ: Player encontrado automaticamente em '{playerObj.name}'");
+            }
+            else
+            {
+                Debug.LogWarning("WallOpacityByPlayerZ: Player não encontrado. Certifique-se que o GameObject do player tem a tag 'Player'.");
+                enabled = false;
+                return;
+            }
         }
 
         // Pega todos os renderers deste muro e filhos
