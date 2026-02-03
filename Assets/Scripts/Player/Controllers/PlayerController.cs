@@ -43,7 +43,8 @@ public class PlayerController : MonoBehaviour
             Vector3 movementInput = inputHandler.GetMovementInput();
             if (movementInput != Vector3.zero)
             {
-                playerMovement.TryMove(movementInput);
+                // Usa método específico do teclado que cancela pathfinding
+                playerMovement.TryMoveFromKeyboard(movementInput);
             }
         }
 
