@@ -43,8 +43,19 @@ public class PlayerController : MonoBehaviour
             Vector3 movementInput = inputHandler.GetMovementInput();
             if (movementInput != Vector3.zero)
             {
-                // Usa método específico do teclado que cancela pathfinding
-                playerMovement.TryMoveFromKeyboard(movementInput);
+                // Verifica se Ctrl está pressionado (Left ou Right Ctrl)
+                bool isCtrlPressed = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+                
+                if (isCtrlPressed)
+                {
+                    // Apenas aponta para a direção sem se mover
+                    playerMovement.PointToDirection(movementInput);
+                }
+                else
+                {
+                    // Usa método específico do teclado que cancela pathfinding
+                    playerMovement.TryMoveFromKeyboard(movementInput);
+                }
             }
         }
 

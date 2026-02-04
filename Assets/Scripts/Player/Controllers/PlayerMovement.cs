@@ -117,6 +117,33 @@ namespace Player.Controllers
         }
         
         /// <summary>
+        /// Apenas aponta o personagem para a direção sem se mover (Ctrl + direção)
+        /// </summary>
+        public void PointToDirection(Vector3 direction)
+        {
+            if (isMoving) return;
+            
+            // Cancela pathfinding se estiver ativo
+            if (isFollowingPath)
+            {
+                CancelPath();
+            }
+            
+            lastMoveDirection = direction;
+            
+            // Atualiza o flip do sprite baseado na direção
+            if (spriteRenderer != null)
+            {
+                if (direction.x > 0)
+                    spriteRenderer.flipX = true;
+                else if (direction.x < 0)
+                    spriteRenderer.flipX = false;
+            }
+            
+            Debug.Log($"Apontando para direção: {direction}");
+        }
+        
+        /// <summary>
         /// Tenta mover o jogador na direção especificada
         /// </summary>
         public void TryMove(Vector3 direction)
