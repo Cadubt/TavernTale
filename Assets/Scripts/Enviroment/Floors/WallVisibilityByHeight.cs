@@ -6,7 +6,7 @@ public class WallVisibilityByHeight : MonoBehaviour
     public Transform player;
 
     [Tooltip("Altura em Y a partir da qual esta parede será visível")]
-    private float minYToShow = 7.71f;
+    private float minYToShow = 7.9f;
 
     private bool isVisible = true;
     private Renderer[] renderers;

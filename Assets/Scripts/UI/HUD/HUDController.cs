@@ -10,6 +10,14 @@ public class HUDController : MonoBehaviour
     public Label healthLabel;
     public Label manaLabel;
     
+    // Barra de vida
+    private VisualElement healthBarFill;
+    private int maxHealth = 100; // Valor padrão, será atualizado
+    
+    // Barra de mana
+    private VisualElement manaBarFill;
+    private int maxMana = 100; // Valor padrão, será atualizado
+    
     // FPS Counter
     private Label telemetryTitleLabel;
     private Label fpsLabel;
@@ -30,6 +38,20 @@ public class HUDController : MonoBehaviour
         playerController = FindObjectOfType<PlayerController>();
         healthLabel = hudDocument.rootVisualElement.Q<Label>("life");
         manaLabel = hudDocument.rootVisualElement.Q<Label>("mana");
+        
+        // Obtém a barra de vida
+        healthBarFill = hudDocument.rootVisualElement.Q<VisualElement>("healthBarFill");
+        
+        // Obtém a barra de mana
+        manaBarFill = hudDocument.rootVisualElement.Q<VisualElement>("manaBarFill");
+        
+        // Tenta obter vida máxima do player
+        var playerStats = playerController.GetComponent<Player.Data.PlayerStats>();
+        if (playerStats != null)
+        {
+            maxHealth = playerStats.MaxHealth;
+            maxMana = playerStats.MaxMana;
+        }
         
         // Cria título de telemetria
         telemetryTitleLabel = hudDocument.rootVisualElement.Q<Label>("telemetryTitle");
@@ -130,12 +152,42 @@ public class HUDController : MonoBehaviour
     // Update is called once per frame
     public void UpdateHealth(int health)
     {
-        healthLabel.text = "Vida: " + health.ToString();
+        healthLabel.text = $"{health} / {maxHealth}";
+        
+        // Atualiza a barra de vida
+        if (healthBarFill != null)
+        {
+            float healthPercentage = (float)health / maxHealth;
+            healthBarFill.style.width = Length.Percent(healthPercentage * 100);
+            
+            // Muda cor baseado na porcentagem de vida
+            if (healthPercentage > 0.75f)
+                healthBarFill.style.backgroundColor = new Color(0, 1, 0); // Verde
+            else if (healthPercentage > 0.25f)
+                healthBarFill.style.backgroundColor = new Color(1, 1, 0); // Amarelo
+            else
+                healthBarFill.style.backgroundColor = new Color(1, 0, 0); // Vermelho
+        }
     }
 
     public void UpdateMana(int mana)
     {
-        manaLabel.text = "Mana: " + mana.ToString();
+        manaLabel.text = $"{mana} / {maxMana}";
+        
+        // Atualiza a barra de mana
+        if (manaBarFill != null)
+        {
+            float manaPercentage = (float)mana / maxMana;
+            manaBarFill.style.width = Length.Percent(manaPercentage * 100);
+            
+            // Muda cor baseado na porcentagem de mana
+            if (manaPercentage > 0.75f)
+                manaBarFill.style.backgroundColor = new Color(0, 0.4f, 1); // Azul brilhante
+            else if (manaPercentage > 0.25f)
+                manaBarFill.style.backgroundColor = new Color(0.5f, 0.2f, 1); // Roxo
+            else
+                manaBarFill.style.backgroundColor = new Color(0.3f, 0, 0.5f); // Roxo escuro
+        }
     }
     
     private void UpdateFPS()
