@@ -51,6 +51,37 @@ public class PocMonsterController : MonoBehaviour
     private Tile2D currentReservedTile; // Tile que este monstro reservou
     private bool hasTileReserved = false;
     
+    // Sistema de seleção e highlight
+    private static PocMonsterController selectedMonster = null;
+    private bool isSelected = false;
+    private GameObject selectionQuad; // Quad de seleção no chão
+    private GameObject outlineSprite; // Sprite duplicado para o outline
+    
+    // Sistema de exibição de dano
+    private GameObject damageTextObject;
+    private TextMesh damageText;
+    private Coroutine hideDamageCoroutine;
+    
+    [Header("Sistema de Seleção")]
+    [SerializeField] private Color selectionQuadColor = new Color(1f, 1f, 0f, 0.5f); // Amarelo semi-transparente
+    [SerializeField] private Color outlineColor = new Color(1f, 0f, 0f, 1f); // Vermelho para o contorno
+    [SerializeField] private float outlineWidth = 1f; // Largura do contorno em pixels
+    [SerializeField] private Texture2D cursorTexture; // Textura customizada do cursor (opcional)
+    [SerializeField] private Vector2 cursorHotspot = Vector2.zero; // Ponto quente do cursor
+    [SerializeField] private int attackDamageOnSelect = 50; // Dano ao selecionar monstro adjacente
+    [SerializeField] private float autoAttackInterval = 3.0f; // Intervalo entre ataques automáticos em segundos
+    private Coroutine autoAttackCoroutine; // Referência para a corrotina de ataque automático
+    
+    [Header("Sistema de Vida")]
+    [SerializeField] private int maxHealth = 100;
+    private int currentHealth;
+    
+    [Header("Sistema de Dano Visual")]
+    [SerializeField] private Color damageTextColor = Color.red;
+    [SerializeField] private float damageTextSize = 0.2f;
+    [SerializeField] private float damageTextYOffset = 6f; // Altura acima do monstro (em unidades do mundo)
+    [SerializeField] private float damageTextDuration = 1f; // Tempo antes de desaparecer
+    
     [Header("Configurações de Movimento")]
     [SerializeField] private float speed = 5.0f;
     [SerializeField] private float chaseRange = 10f; // Distância para começar a perseguir
@@ -101,6 +132,18 @@ public class PocMonsterController : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
         targetPosition = transform.position;
+        
+        // Inicializa a vida
+        currentHealth = maxHealth;
+        
+        // Cria o sprite de outline
+        CreateOutlineSprite();
+        
+        // Cria o texto de dano
+        CreateDamageText();
+        
+        // Cria o quad de seleção no chão
+        CreateSelectionQuad();
         
         // Reserva o tile inicial
         Vector3 initialTile = GetTilePosition(transform.position);
@@ -195,6 +238,379 @@ public class PocMonsterController : MonoBehaviour
         {
             animator.SetBool("isWalking", isMoving);
         }
+        
+        // Sincroniza o flip do sprite de outline com o sprite principal
+        SyncOutlineFlip();
+    }
+    
+    /// <summary>
+    /// Sincroniza o flip do sprite de outline com o sprite principal
+    /// </summary>
+    private void SyncOutlineFlip()
+    {
+        if (outlineSprite != null && spriteRenderer != null)
+        {
+            SpriteRenderer outlineRenderer = outlineSprite.GetComponent<SpriteRenderer>();
+            if (outlineRenderer != null)
+            {
+                outlineRenderer.flipX = spriteRenderer.flipX;
+                outlineRenderer.flipY = spriteRenderer.flipY;
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Cria o texto de dano acima do monstro
+    /// </summary>
+    private void CreateDamageText()
+    {
+        // Cria GameObject para o texto
+        damageTextObject = new GameObject("DamageText");
+        damageTextObject.transform.SetParent(transform);
+        damageTextObject.transform.localPosition = new Vector3(0, damageTextYOffset, 0);
+        damageTextObject.transform.localRotation = Quaternion.identity; // Mesma rotação do sprite
+        
+        // Aplica escala para compensar a distorção da perspectiva
+        // Estica verticalmente e comprime horizontalmente
+        damageTextObject.transform.localScale = new Vector3(1f, 1.2f, 1f); // 2x mais alto
+        
+        // Adiciona TextMesh
+        damageText = damageTextObject.AddComponent<TextMesh>();
+        damageText.text = "";
+        damageText.fontSize = 50;
+        damageText.characterSize = damageTextSize;
+        damageText.anchor = TextAnchor.MiddleCenter;
+        damageText.alignment = TextAlignment.Center;
+        damageText.color = damageTextColor;
+        
+        // Adiciona MeshRenderer para aparecer corretamente
+        MeshRenderer renderer = damageTextObject.GetComponent<MeshRenderer>();
+        if (renderer != null)
+        {
+            renderer.sortingLayerName = "Default";
+            renderer.sortingOrder = 100; // Renderiza na frente de tudo
+        }
+        
+        // Começa invisível
+        damageTextObject.SetActive(false);
+    }
+    
+    /// <summary>
+    /// Detecta clique do botão direito do mouse no monstro
+    /// </summary>
+    private void OnMouseOver()
+    {
+        // Verifica se foi clique com botão direito (1 = botão direito)
+        if (Input.GetMouseButtonDown(1))
+        {
+            SelectMonster();
+        }
+    }
+    
+    /// <summary>
+    /// Muda cursor para pointer quando mouse passa por cima
+    /// </summary>
+    private void OnMouseEnter()
+    {
+        if (cursorTexture != null)
+        {
+            // Usa textura customizada se fornecida
+            Cursor.SetCursor(cursorTexture, cursorHotspot, CursorMode.Auto);
+        }
+        else
+        {
+            // Cria uma textura simples de pointer programaticamente
+            CreateAndSetPointerCursor();
+        }
+        Debug.Log("Mouse entrou no monstro - cursor alterado");
+    }
+    
+    /// <summary>
+    /// Cria um cursor de pointer simples programaticamente
+    /// </summary>
+    private void CreateAndSetPointerCursor()
+    {
+        // Cria uma textura 32x32 para simular um pointer
+        Texture2D pointerTexture = new Texture2D(32, 32);
+        Color[] colors = new Color[32 * 32];
+        
+        // Preenche com transparente
+        for (int i = 0; i < colors.Length; i++)
+        {
+            colors[i] = Color.clear;
+        }
+        
+        // Desenha uma seta simples (pointer)
+        for (int y = 0; y < 20; y++)
+        {
+            for (int x = 0; x < 12; x++)
+            {
+                if (x <= y / 2 && x < 10)
+                {
+                    colors[y * 32 + x] = Color.white;
+                    if (x > 0 && x < y / 2 - 1)
+                    {
+                        colors[y * 32 + x] = new Color(0.3f, 0.3f, 0.3f, 1f);
+                    }
+                }
+            }
+        }
+        
+        pointerTexture.SetPixels(colors);
+        pointerTexture.Apply();
+        
+        Cursor.SetCursor(pointerTexture, Vector2.zero, CursorMode.Auto);
+    }
+    
+    /// <summary>
+    /// Restaura cursor padrão quando mouse sai de cima
+    /// </summary>
+    private void OnMouseExit()
+    {
+        Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+        Debug.Log("Mouse saiu do monstro - cursor restaurado");
+    }
+    
+    /// <summary>
+    /// Cria um sprite duplicado atrás para mostrar o outline
+    /// </summary>
+    private void CreateOutlineSprite()
+    {
+        if (spriteRenderer == null) return;
+        
+        // Cria um GameObject filho para o outline
+        outlineSprite = new GameObject("Outline");
+        outlineSprite.transform.SetParent(transform);
+        outlineSprite.transform.localPosition = Vector3.zero;
+        outlineSprite.transform.localRotation = Quaternion.identity;
+        outlineSprite.transform.localScale = Vector3.one;
+        
+        // Adiciona SpriteRenderer e copia configurações
+        SpriteRenderer outlineRenderer = outlineSprite.AddComponent<SpriteRenderer>();
+        outlineRenderer.sprite = spriteRenderer.sprite;
+        outlineRenderer.sortingLayerName = spriteRenderer.sortingLayerName;
+        outlineRenderer.sortingOrder = spriteRenderer.sortingOrder - 1; // Renderiza atrás
+        
+        // Cria material com shader de outline
+        Shader outlineShader = Shader.Find("Sprites/Outline");
+        if (outlineShader != null)
+        {
+            Material outlineMat = new Material(outlineShader);
+            outlineMat.SetTexture("_MainTex", spriteRenderer.sprite.texture);
+            outlineMat.SetColor("_Color", Color.white);
+            outlineMat.SetColor("_OutlineColor", outlineColor);
+            outlineMat.SetFloat("_OutlineWidth", outlineWidth / 100f);
+            outlineRenderer.material = outlineMat;
+        }
+        
+        // Começa desativado
+        outlineSprite.SetActive(false);
+    }
+    
+    /// <summary>
+    /// Cria o quad de seleção no chão
+    /// </summary>
+    private void CreateSelectionQuad()
+    {
+        // Cria um GameObject para o quad
+        selectionQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        selectionQuad.name = "SelectionQuad";
+        selectionQuad.transform.SetParent(transform);
+        
+        // Posiciona no chão (ligeiramente acima para evitar z-fighting)
+        selectionQuad.transform.localPosition = new Vector3(0, 0.01f, 0);
+        selectionQuad.transform.localRotation = Quaternion.Euler(90, 0, 0); // Rotaciona para ficar horizontal
+        selectionQuad.transform.localScale = new Vector3(1f, 1f, 1f); // Tamanho do tile
+        
+        // Configura o material
+        Renderer quadRenderer = selectionQuad.GetComponent<Renderer>();
+        if (quadRenderer != null)
+        {
+            // Cria um material simples com a cor de seleção
+            Material selectionMaterial = new Material(Shader.Find("Sprites/Default"));
+            selectionMaterial.color = selectionQuadColor;
+            quadRenderer.material = selectionMaterial;
+            
+            // Configura para renderizar acima do chão
+            quadRenderer.sortingLayerName = "Default";
+            quadRenderer.sortingOrder = 1;
+        }
+        
+        // Remove o collider do quad para não interferir nos clicks
+        Collider quadCollider = selectionQuad.GetComponent<Collider>();
+        if (quadCollider != null)
+        {
+            Destroy(quadCollider);
+        }
+        
+        // Começa desativado
+        selectionQuad.SetActive(false);
+    }
+    
+    /// <summary>
+    /// Seleciona este monstro e aplica highlight
+    /// </summary>
+    private void SelectMonster()
+    {
+        // Desseleciona o monstro anterior se houver
+        if (selectedMonster != null && selectedMonster != this)
+        {
+            selectedMonster.Deselect();
+        }
+        
+        // Seleciona este monstro
+        selectedMonster = this;
+        isSelected = true;
+        
+        // Ativa o sprite de outline (não altera o sprite original!)
+        if (outlineSprite != null)
+        {
+            outlineSprite.SetActive(true);
+            Debug.Log($"Outline ativado para {gameObject.name}");
+        }
+        
+        // Não mostra mais o quad de seleção no chão (removido)
+        // if (selectionQuad != null)
+        // {
+        //     selectionQuad.SetActive(true);
+        // }
+        
+        Debug.Log($"{gameObject.name} foi selecionado! HP: {currentHealth}/{maxHealth}");
+        
+        // Inicia ataque automático a cada 3 segundos
+        if (autoAttackCoroutine != null)
+        {
+            StopCoroutine(autoAttackCoroutine);
+        }
+        autoAttackCoroutine = StartCoroutine(AutoAttackRoutine());
+    }
+    
+    /// <summary>
+    /// Corrotina que ataca automaticamente a cada intervalo definido
+    /// </summary>
+    private IEnumerator AutoAttackRoutine()
+    {
+        while (isSelected)
+        {
+            // Verifica se está adjacente ao player e ataca
+            if (player != null && IsAdjacentToPlayer())
+            {
+                TakeDamage(attackDamageOnSelect);
+                Debug.Log($"Ataque automático! {gameObject.name} recebeu {attackDamageOnSelect} de dano! HP: {currentHealth}/{maxHealth}");
+            }
+            
+            // Aguarda o intervalo antes do próximo ataque
+            yield return new WaitForSeconds(autoAttackInterval);
+        }
+    }
+    
+    /// <summary>
+    /// Desseleciona este monstro e remove highlight
+    /// </summary>
+    private void Deselect()
+    {
+        isSelected = false;
+        
+        // Para o ataque automático
+        if (autoAttackCoroutine != null)
+        {
+            StopCoroutine(autoAttackCoroutine);
+            autoAttackCoroutine = null;
+        }
+        
+        // Desativa o sprite de outline (sprite original não foi alterado!)
+        if (outlineSprite != null)
+        {
+            outlineSprite.SetActive(false);
+        }
+        
+        // Não precisa mais esconder o quad (removido)
+        // if (selectionQuad != null)
+        // {
+        //     selectionQuad.SetActive(false);
+        // }
+        
+        Debug.Log($"{gameObject.name} foi desselecionado!");
+    }
+    
+    /// <summary>
+    /// Recebe dano e verifica se morreu
+    /// </summary>
+    public void TakeDamage(int damageAmount)
+    {
+        currentHealth -= damageAmount;
+        Debug.Log($"{gameObject.name} recebeu {damageAmount} de dano! HP restante: {currentHealth}/{maxHealth}");
+        
+        // Mostra o dano visualmente
+        ShowDamage(damageAmount);
+        
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+    
+    /// <summary>
+    /// Mostra o dano recebido acima do monstro
+    /// </summary>
+    private void ShowDamage(int damage)
+    {
+        if (damageText == null || damageTextObject == null) return;
+        
+        // Para a corrotina anterior se existir
+        if (hideDamageCoroutine != null)
+        {
+            StopCoroutine(hideDamageCoroutine);
+        }
+        
+        // Atualiza o texto com o novo dano
+        damageText.text = $"-{damage}";
+        damageTextObject.SetActive(true);
+        
+        // Inicia nova corrotina para esconder após 2 segundos
+        hideDamageCoroutine = StartCoroutine(HideDamageAfterDelay());
+    }
+    
+    /// <summary>
+    /// Esconde o texto de dano após um delay
+    /// </summary>
+    private IEnumerator HideDamageAfterDelay()
+    {
+        yield return new WaitForSeconds(damageTextDuration);
+        
+        if (damageTextObject != null)
+        {
+            damageTextObject.SetActive(false);
+        }
+        
+        hideDamageCoroutine = null;
+    }
+    
+    /// <summary>
+    /// Morre e desaparece
+    /// </summary>
+    private void Die()
+    {
+        Debug.Log($"{gameObject.name} morreu!");
+        
+        // Para o ataque automático se estava ativo
+        if (autoAttackCoroutine != null)
+        {
+            StopCoroutine(autoAttackCoroutine);
+            autoAttackCoroutine = null;
+        }
+        
+        // Se estava selecionado, limpa a referência estática
+        if (selectedMonster == this)
+        {
+            selectedMonster = null;
+        }
+        
+        // Libera o tile reservado
+        ReleaseTile();
+        
+        // Destroi o GameObject
+        Destroy(gameObject);
     }
     
     private void LateUpdate()
