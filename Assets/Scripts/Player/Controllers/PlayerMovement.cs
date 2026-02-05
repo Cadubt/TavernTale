@@ -54,7 +54,7 @@ namespace Player.Controllers
         {
             if (animator != null)
             {
-                animator.SetBool("isWalking", isMoving);
+                // animator.SetBool("isWalking", isMoving);
             }
             
             // Processa movimentação por clique

@@ -73,7 +73,7 @@ public class PocMonsterController : MonoBehaviour
     private Coroutine autoAttackCoroutine; // Referência para a corrotina de ataque automático
     
     [Header("Sistema de Vida")]
-    [SerializeField] private int maxHealth = 100;
+    [SerializeField] private int maxHealth = 900;
     private int currentHealth;
     
     [Header("Sistema de Dano Visual")]
@@ -83,11 +83,11 @@ public class PocMonsterController : MonoBehaviour
     [SerializeField] private float damageTextDuration = 1f; // Tempo antes de desaparecer
     
     [Header("Configurações de Movimento")]
-    [SerializeField] private float speed = 5.0f;
+    [SerializeField] private float speed = 4.0f;
     [SerializeField] private float chaseRange = 10f; // Distância para começar a perseguir
     
     [Header("Configurações de Combate")]
-    [SerializeField] private int damage = 10;
+    [SerializeField] private int damage = 43;
     [SerializeField] private float attackInterval = 2.0f; // Tempo entre ataques
     [SerializeField] private float repositionInterval = 4.0f; // Tempo para se reposicionar
     
@@ -156,7 +156,7 @@ public class PocMonsterController : MonoBehaviour
             var optimizable = GetComponent(optimizableType);
             if (optimizable != null)
             {
-                Debug.LogWarning($"Removendo OptimizableObject de {gameObject.name} - Monstros não devem ser otimizados!");
+                // Debug.LogWarning($"Removendo OptimizableObject de {gameObject.name} - Monstros não devem ser otimizados!");
                 Destroy(optimizable);
             }
         }
@@ -170,7 +170,7 @@ public class PocMonsterController : MonoBehaviour
             spriteRenderer.sortingLayerName = "Default"; // Ajuste conforme sua configuração
             // spriteRenderer.sortingOrder = 10; // Valor alto para aparecer na frente
             
-            Debug.Log($"{gameObject.name} - Sprite: {spriteRenderer.sprite?.name ?? "NULL"}, Enabled: {spriteRenderer.enabled}");
+            // Debug.Log($"{gameObject.name} - Sprite: {spriteRenderer.sprite?.name ?? "NULL"}, Enabled: {spriteRenderer.enabled}");
         }
         
         // Garante que o GameObject está ativo
@@ -179,15 +179,15 @@ public class PocMonsterController : MonoBehaviour
         // Debug para verificar configuração
         if (spriteRenderer == null)
         {
-            Debug.LogError($"{gameObject.name} não tem SpriteRenderer!");
+            // Debug.LogError($"{gameObject.name} não tem SpriteRenderer!");
         }
         else if (spriteRenderer.sprite == null)
         {
-            Debug.LogError($"{gameObject.name} SpriteRenderer não tem sprite atribuído!");
+            // Debug.LogError($"{gameObject.name} SpriteRenderer não tem sprite atribuído!");
         }
         else
         {
-            Debug.Log($"{gameObject.name} configurado corretamente! Sprite: {spriteRenderer.sprite.name}");
+            // Debug.Log($"{gameObject.name} configurado corretamente! Sprite: {spriteRenderer.sprite.name}");
         }
     }
 
@@ -198,7 +198,7 @@ public class PocMonsterController : MonoBehaviour
         // VERIFICAÇÃO CRÍTICA: Se detectar colisão e não estiver se movendo, empurra para tile livre
         if (!isMoving && CheckMonsterCollision())
         {
-            Debug.LogError($"{gameObject.name} detectou colisão em Update! Tentando se separar...");
+            // Debug.LogError($"{gameObject.name} detectou colisão em Update! Tentando se separar...");
             StartCoroutine(SeparateFromOtherMonster());
             return;
         }
@@ -207,7 +207,7 @@ public class PocMonsterController : MonoBehaviour
         if (spriteRenderer != null && !spriteRenderer.enabled)
         {
             spriteRenderer.enabled = true;
-            Debug.LogWarning($"{gameObject.name} sprite foi reativado!");
+            // Debug.LogWarning($"{gameObject.name} sprite foi reativado!");
         }
 
         float distanceToPlayer = Vector3.Distance(transform.position, player.transform.position);
@@ -236,7 +236,7 @@ public class PocMonsterController : MonoBehaviour
         // Atualiza animação
         if (animator != null)
         {
-            animator.SetBool("isWalking", isMoving);
+            // animator.SetBool("isWalking", isMoving);
         }
         
         // Sincroniza o flip do sprite de outline com o sprite principal
@@ -322,7 +322,7 @@ public class PocMonsterController : MonoBehaviour
             // Cria uma textura simples de pointer programaticamente
             CreateAndSetPointerCursor();
         }
-        Debug.Log("Mouse entrou no monstro - cursor alterado");
+        // Debug.Log("Mouse entrou no monstro - cursor alterado");
     }
     
     /// <summary>
@@ -368,7 +368,7 @@ public class PocMonsterController : MonoBehaviour
     private void OnMouseExit()
     {
         Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
-        Debug.Log("Mouse saiu do monstro - cursor restaurado");
+        // Debug.Log("Mouse saiu do monstro - cursor restaurado");
     }
     
     /// <summary>
@@ -466,7 +466,7 @@ public class PocMonsterController : MonoBehaviour
         if (outlineSprite != null)
         {
             outlineSprite.SetActive(true);
-            Debug.Log($"Outline ativado para {gameObject.name}");
+            // Debug.Log($"Outline ativado para {gameObject.name}");
         }
         
         // Não mostra mais o quad de seleção no chão (removido)
@@ -475,7 +475,7 @@ public class PocMonsterController : MonoBehaviour
         //     selectionQuad.SetActive(true);
         // }
         
-        Debug.Log($"{gameObject.name} foi selecionado! HP: {currentHealth}/{maxHealth}");
+        // Debug.Log($"{gameObject.name} foi selecionado! HP: {currentHealth}/{maxHealth}");
         
         // Inicia ataque automático a cada 3 segundos
         if (autoAttackCoroutine != null)
@@ -496,7 +496,7 @@ public class PocMonsterController : MonoBehaviour
             if (player != null && IsAdjacentToPlayer())
             {
                 TakeDamage(attackDamageOnSelect);
-                Debug.Log($"Ataque automático! {gameObject.name} recebeu {attackDamageOnSelect} de dano! HP: {currentHealth}/{maxHealth}");
+                // Debug.Log($"Ataque automático! {gameObject.name} recebeu {attackDamageOnSelect} de dano! HP: {currentHealth}/{maxHealth}");
             }
             
             // Aguarda o intervalo antes do próximo ataque
@@ -530,7 +530,7 @@ public class PocMonsterController : MonoBehaviour
         //     selectionQuad.SetActive(false);
         // }
         
-        Debug.Log($"{gameObject.name} foi desselecionado!");
+        // Debug.Log($"{gameObject.name} foi desselecionado!");
     }
     
     /// <summary>
@@ -539,7 +539,7 @@ public class PocMonsterController : MonoBehaviour
     public void TakeDamage(int damageAmount)
     {
         currentHealth -= damageAmount;
-        Debug.Log($"{gameObject.name} recebeu {damageAmount} de dano! HP restante: {currentHealth}/{maxHealth}");
+        // Debug.Log($"{gameObject.name} recebeu {damageAmount} de dano! HP restante: {currentHealth}/{maxHealth}");
         
         // Mostra o dano visualmente
         ShowDamage(damageAmount);
@@ -591,7 +591,7 @@ public class PocMonsterController : MonoBehaviour
     /// </summary>
     private void Die()
     {
-        Debug.Log($"{gameObject.name} morreu!");
+        // Debug.Log($"{gameObject.name} morreu!");
         
         // Para o ataque automático se estava ativo
         if (autoAttackCoroutine != null)
@@ -653,11 +653,8 @@ public class PocMonsterController : MonoBehaviour
             reservedTiles.Add(tile2D);
             currentReservedTile = tile2D;
             hasTileReserved = true;
-            Debug.Log($"{gameObject.name} reservou tile {tile2D}");
             return true;
         }
-        
-        Debug.Log($"{gameObject.name} não conseguiu reservar tile {tile2D} - já está reservado");
         return false;
     }
     
@@ -669,7 +666,6 @@ public class PocMonsterController : MonoBehaviour
         if (hasTileReserved)
         {
             reservedTiles.Remove(currentReservedTile);
-            Debug.Log($"{gameObject.name} liberou tile {currentReservedTile}");
             hasTileReserved = false;
         }
     }
@@ -725,7 +721,7 @@ public class PocMonsterController : MonoBehaviour
             // VERIFICAÇÃO PREVENTIVA: Antes de tentar reposicionar, verifica se já está em colisão
             if (CheckMonsterCollision())
             {
-                Debug.LogError($"{gameObject.name} já está em colisão! Não tentará reposicionar.");
+                // Debug.LogError($"{gameObject.name} já está em colisão! Não tentará reposicionar.");
                 return;
             }
             
@@ -738,7 +734,7 @@ public class PocMonsterController : MonoBehaviour
         if (playerController != null)
         {
             playerController.TakeDamage(damage);
-            Debug.Log($"{gameObject.name} causou {damage} de dano ao player!");
+            // Debug.Log($"{gameObject.name} causou {damage} de dano ao player!");
         }
     }
 
@@ -747,7 +743,7 @@ public class PocMonsterController : MonoBehaviour
         // VERIFICAÇÃO PREVENTIVA: Não inicia movimento se já está em colisão
         if (CheckMonsterCollision())
         {
-            Debug.LogError($"{gameObject.name} já está em colisão antes de mover! Cancelando movimento.");
+            // Debug.LogError($"{gameObject.name} já está em colisão antes de mover! Cancelando movimento.");
             yield break;
         }
         
@@ -762,7 +758,7 @@ public class PocMonsterController : MonoBehaviour
         // Verifica se há monstro bloqueando o caminho
         if (HasMonsterInDirection(currentTile, direction))
         {
-            Debug.Log($"{gameObject.name} detectou monstro no caminho direto - procurando rota alternativa");
+            // Debug.Log($"{gameObject.name} detectou monstro no caminho direto - procurando rota alternativa");
             
             // Tenta encontrar um tile adjacente ao player disponível
             Vector3 targetAdjacentTile = FindBestAdjacentTileToPlayer(currentTile);
@@ -787,7 +783,7 @@ public class PocMonsterController : MonoBehaviour
             
             if (direction == Vector3.zero)
             {
-                Debug.Log($"{gameObject.name} não encontrou caminho livre - ficando parado");
+                // Debug.Log($"{gameObject.name} não encontrou caminho livre - ficando parado");
                 isMoving = false;
                 yield break;
             }
@@ -795,7 +791,7 @@ public class PocMonsterController : MonoBehaviour
         // Verifica se pode mover nessa direção (obstáculos, paredes, etc)
         else if (!CanMoveToDirection(currentTile, direction))
         {
-            Debug.Log($"{gameObject.name} caminho bloqueado por obstáculo - procurando alternativa");
+            // Debug.Log($"{gameObject.name} caminho bloqueado por obstáculo - procurando alternativa");
             direction = FindAlternativeDirection(currentTile, playerTile);
             
             if (direction == Vector3.zero)
@@ -810,7 +806,7 @@ public class PocMonsterController : MonoBehaviour
         // VERIFICAÇÃO 1: Verifica fisicamente se há monstro no tile de destino
         if (IsTileOccupied(newTarget))
         {
-            Debug.LogWarning($"{gameObject.name} VERIFICAÇÃO FÍSICA: tile {newTarget} está ocupado!");
+            // Debug.LogWarning($"{gameObject.name} VERIFICAÇÃO FÍSICA: tile {newTarget} está ocupado!");
             isMoving = false;
             yield break;
         }
@@ -818,7 +814,7 @@ public class PocMonsterController : MonoBehaviour
         // VERIFICAÇÃO 2: Tenta reservar o tile de destino ANTES de mover
         if (!ReserveTile(newTarget))
         {
-            Debug.Log($"{gameObject.name} VERIFICAÇÃO RESERVA: não conseguiu reservar tile {newTarget}");
+            // Debug.Log($"{gameObject.name} VERIFICAÇÃO RESERVA: não conseguiu reservar tile {newTarget}");
             isMoving = false;
             yield break;
         }
@@ -826,7 +822,7 @@ public class PocMonsterController : MonoBehaviour
         // VERIFICAÇÃO 3: Verifica novamente após reservar (double-check)
         if (IsTileOccupied(newTarget))
         {
-            Debug.LogWarning($"{gameObject.name} VERIFICAÇÃO DUPLA: tile {newTarget} foi ocupado após reserva!");
+            // Debug.LogWarning($"{gameObject.name} VERIFICAÇÃO DUPLA: tile {newTarget} foi ocupado após reserva!");
             ReleaseTile(); // Libera a reserva
             isMoving = false;
             yield break;
@@ -848,7 +844,7 @@ public class PocMonsterController : MonoBehaviour
         isMoving = true;
         Vector3 currentTile = GetTilePosition(transform.position);
         
-        Debug.LogWarning($"{gameObject.name} tentando se separar de outro monstro...");
+        // Debug.LogWarning($"{gameObject.name} tentando se separar de outro monstro...");
         
         // Tenta encontrar um tile livre adjacente
         Vector3[] directions = new Vector3[]
@@ -865,14 +861,14 @@ public class PocMonsterController : MonoBehaviour
             
             if (!IsTileOccupied(targetTile) && !IsTileReserved(targetTile) && ReserveTile(targetTile))
             {
-                Debug.Log($"{gameObject.name} encontrou tile livre para separação: ({targetTile.x}, {targetTile.z})");
+                // Debug.Log($"{gameObject.name} encontrou tile livre para separação: ({targetTile.x}, {targetTile.z})");
                 yield return StartCoroutine(MoveToTile(targetTile));
                 isMoving = false;
                 yield break;
             }
         }
         
-        Debug.LogError($"{gameObject.name} não encontrou tile livre para separação! Forçando deslocamento...");
+        // Debug.LogError($"{gameObject.name} não encontrou tile livre para separação! Forçando deslocamento...");
         // Se não encontrou tile livre, força um deslocamento pequeno
         transform.position += new Vector3(Random.Range(-0.3f, 0.3f), 0, Random.Range(-0.3f, 0.3f));
         
@@ -884,7 +880,7 @@ public class PocMonsterController : MonoBehaviour
         // VERIFICAÇÃO PREVENTIVA: Não reposiciona se já está em colisão
         if (CheckMonsterCollision())
         {
-            Debug.LogError($"{gameObject.name} já está em colisão! Não irá reposicionar.");
+            // Debug.LogError($"{gameObject.name} já está em colisão! Não irá reposicionar.");
             yield break;
         }
         
@@ -921,34 +917,34 @@ public class PocMonsterController : MonoBehaviour
             // VERIFICAÇÃO TRIPLA: tile ocupado, reservado e verificação física
             if (IsTileOccupied(tile))
             {
-                Debug.Log($"{gameObject.name} REPOSIÇÃO: tile {tile} está ocupado fisicamente");
+                // Debug.Log($"{gameObject.name} REPOSIÇÃO: tile {tile} está ocupado fisicamente");
                 continue;
             }
             
             if (IsTileReserved(tile))
             {
-                Debug.Log($"{gameObject.name} REPOSIÇÃO: tile {tile} está reservado");
+                // Debug.Log($"{gameObject.name} REPOSIÇÃO: tile {tile} está reservado");
                 continue;
             }
             
             // Tenta reservar IMEDIATAMENTE
             if (!ReserveTile(tile))
             {
-                Debug.Log($"{gameObject.name} REPOSIÇÃO: falhou ao reservar tile {tile}");
+                // Debug.Log($"{gameObject.name} REPOSIÇÃO: falhou ao reservar tile {tile}");
                 continue;
             }
             
             // Verifica novamente após reservar
             if (IsTileOccupied(tile))
             {
-                Debug.LogWarning($"{gameObject.name} REPOSIÇÃO: tile {tile} foi ocupado após reserva!");
+                // Debug.LogWarning($"{gameObject.name} REPOSIÇÃO: tile {tile} foi ocupado após reserva!");
                 ReleaseTile();
                 continue;
             }
             
             targetTile = tile;
             foundValidTile = true;
-            Debug.Log($"{gameObject.name} REPOSIÇÃO: encontrou e reservou tile válido {tile}");
+            // Debug.Log($"{gameObject.name} REPOSIÇÃO: encontrou e reservou tile válido {tile}");
             break;
         }
 
@@ -959,7 +955,7 @@ public class PocMonsterController : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"{gameObject.name} REPOSIÇÃO: não encontrou tile válido para reposicionar");
+            // Debug.LogWarning($"{gameObject.name} REPOSIÇÃO: não encontrou tile válido para reposicionar");
         }
 
         isMoving = false;
@@ -986,7 +982,7 @@ public class PocMonsterController : MonoBehaviour
                 
                 if (isElevator)
                 {
-                    Debug.Log($"{gameObject.name} subindo elevador de Y:{startPosition.y} para Y:{startPosition.y + 1f}");
+                    // Debug.Log($"{gameObject.name} subindo elevador de Y:{startPosition.y} para Y:{startPosition.y + 1f}");
                     float newY = startPosition.y + 1f;
                     endPosition = new Vector3(targetTile.x, newY, targetTile.z);
                 }
@@ -1017,7 +1013,7 @@ public class PocMonsterController : MonoBehaviour
             // Verifica colisão durante o movimento
             if (CheckMonsterCollision())
             {
-                Debug.LogError($"{gameObject.name} COLISÃO DURANTE MOVIMENTO! Revertendo imediatamente!");
+                // Debug.LogError($"{gameObject.name} COLISÃO DURANTE MOVIMENTO! Revertendo imediatamente!");
                 transform.position = previousPosition;
                 yield break;
             }
@@ -1030,7 +1026,7 @@ public class PocMonsterController : MonoBehaviour
         // Verifica se há colisão com outro monstro após movimento (verificação final)
         if (CheckMonsterCollision())
         {
-            Debug.LogError($"{gameObject.name} COLISÃO APÓS MOVIMENTO! Desfazendo movimento!");
+            // Debug.LogError($"{gameObject.name} COLISÃO APÓS MOVIMENTO! Desfazendo movimento!");
             transform.position = previousPosition;
             // Força atualização da reserva para a posição correta
             ReserveTile(GetTilePosition(previousPosition));
@@ -1126,12 +1122,12 @@ public class PocMonsterController : MonoBehaviour
         {
             if (!IsTileOccupied(tile) && !IsTileReserved(tile))
             {
-                Debug.Log($"{gameObject.name} encontrou tile adjacente livre em {tile}");
+                // Debug.Log($"{gameObject.name} encontrou tile adjacente livre em {tile}");
                 return tile;
             }
         }
         
-        Debug.Log($"{gameObject.name} não encontrou tiles adjacentes livres ao redor do player");
+        // Debug.Log($"{gameObject.name} não encontrou tiles adjacentes livres ao redor do player");
         return Vector3.zero;
     }
     
@@ -1152,7 +1148,7 @@ public class PocMonsterController : MonoBehaviour
             
             if (hit.collider.CompareTag("monster"))
             {
-                Debug.Log($"{gameObject.name} detectou monstro {hit.collider.gameObject.name} no caminho!");
+                // Debug.Log($"{gameObject.name} detectou monstro {hit.collider.gameObject.name} no caminho!");
                 return true;
             }
         }
@@ -1187,12 +1183,12 @@ public class PocMonsterController : MonoBehaviour
             // Verifica se não há monstro nesta direção
             if (!HasMonsterInDirection(from, normalized) && CanMoveToDirection(from, normalized))
             {
-                Debug.Log($"{gameObject.name} encontrou caminho alternativo: {normalized}");
+                // Debug.Log($"{gameObject.name} encontrou caminho alternativo: {normalized}");
                 return normalized;
             }
         }
 
-        Debug.Log($"{gameObject.name} não encontrou caminho alternativo sem monstros");
+        // Debug.Log($"{gameObject.name} não encontrou caminho alternativo sem monstros");
         return Vector3.zero;
     }
 
@@ -1260,7 +1256,7 @@ public class PocMonsterController : MonoBehaviour
                 Vector3 otherTile = GetTilePosition(col.transform.position);
                 if (IsSameTile(currentTile, otherTile))
                 {
-                    Debug.LogError($"COLISÃO! {gameObject.name} está no mesmo tile que {col.gameObject.name}! Tile atual: ({currentTile.x}, {currentTile.z}) vs Outro: ({otherTile.x}, {otherTile.z})");
+                    // Debug.LogError($"COLISÃO! {gameObject.name} está no mesmo tile que {col.gameObject.name}! Tile atual: ({currentTile.x}, {currentTile.z}) vs Outro: ({otherTile.x}, {otherTile.z})");
                     return true;
                 }
             }
@@ -1291,7 +1287,7 @@ public class PocMonsterController : MonoBehaviour
                     Vector3 otherTile = GetTilePosition(col.transform.position);
                     if (IsSameTile(tile, otherTile))
                     {
-                        Debug.Log($"{gameObject.name} BLOQUEIO: {col.gameObject.name} está no tile ({tile.x}, {tile.z})");
+                        // Debug.Log($"{gameObject.name} BLOQUEIO: {col.gameObject.name} está no tile ({tile.x}, {tile.z})");
                         return true;
                     }
                 }
@@ -1372,7 +1368,7 @@ public class PocMonsterController : MonoBehaviour
 
         if (!isGroundHit)
         {
-            Debug.Log($"{gameObject.name} sem chão detectado - Iniciando queda!");
+            // Debug.Log($"{gameObject.name} sem chão detectado - Iniciando queda!");
             StartCoroutine(Fall());
         }
     }
@@ -1398,11 +1394,11 @@ public class PocMonsterController : MonoBehaviour
 
             if (isGroundHit)
             {
-                Debug.Log($"{gameObject.name} chão encontrado - Parando queda");
+                // Debug.Log($"{gameObject.name} chão encontrado - Parando queda");
                 break;
             }
 
-            Debug.Log($"{gameObject.name} caindo de Y:{transform.position.y} para Y:{transform.position.y - 1f}");
+            // Debug.Log($"{gameObject.name} caindo de Y:{transform.position.y} para Y:{transform.position.y - 1f}");
             float newY = transform.position.y - 1f;
             Vector3 targetPos = new Vector3(transform.position.x, newY, transform.position.z);
             

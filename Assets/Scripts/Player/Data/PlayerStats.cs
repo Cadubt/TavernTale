@@ -11,7 +11,13 @@ namespace Player.Data
     {
         [Header("Atributos Base")]
         [SerializeField] private int maxHealth = 645;
-        [SerializeField] private int maxMana = 550;
+        [SerializeField] private int maxMana = 2550;
+        
+        [Header("Regeneração")]
+        [SerializeField] private int healthRegenAmount = 10;
+        [SerializeField] private float healthRegenInterval = 5f;
+        [SerializeField] private int manaRegenAmount = 50;
+        [SerializeField] private float manaRegenInterval = 3f;
         
         [Header("Damage Display")]
         [SerializeField] private float damageTextYOffset = 0.8f;
@@ -52,6 +58,39 @@ namespace Player.Data
             
             // Cria o texto de dano
             CreateDamageText();
+        }
+
+        private void Start()
+        {
+            // Inicia as corrotinas de regeneração
+            StartCoroutine(HealthRegeneration());
+            StartCoroutine(ManaRegeneration());
+        }
+
+        private IEnumerator HealthRegeneration()
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(healthRegenInterval);
+                
+                if (currentHealth < maxHealth)
+                {
+                    Heal(healthRegenAmount);
+                }
+            }
+        }
+
+        private IEnumerator ManaRegeneration()
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(manaRegenInterval);
+                
+                if (currentMana < maxMana)
+                {
+                    RestoreMana(manaRegenAmount);
+                }
+            }
         }
 
         public void TakeDamage(int damage)
